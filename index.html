@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>India Travel Map — Delhi, Udaipur &amp; Mumbai</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --clr-bg: #0f1117;
+      --clr-surface: #1a1d27;
+      --clr-surface-hover: #242836;
+      --clr-accent: #f0a500;
+      --clr-accent-glow: rgba(240, 165, 0, .25);
+      --clr-text: #e8e8ec;
+      --clr-text-muted: #9a9bb0;
+      --clr-delhi: #e74c3c;
+      --clr-udaipur: #3498db;
+      --clr-mumbai: #2ecc71;
+      --radius: 16px;
+      --transition: .3s cubic-bezier(.4,0,.2,1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--clr-bg);
+      color: var(--clr-text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ---- HERO ---- */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem 1.5rem;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(240,165,0,.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(52,152,219,.06) 0%, transparent 50%),
+        var(--clr-bg);
+    }
+
+    .hero__tag {
+      display: inline-block;
+      padding: .35rem 1rem;
+      border: 1px solid var(--clr-accent);
+      border-radius: 999px;
+      font-size: .75rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--clr-accent);
+      margin-bottom: 1.5rem;
+      animation: fadeDown .8s ease-out both;
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 6vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+      max-width: 800px;
+      animation: fadeDown .8s ease-out .15s both;
+    }
+
+    .hero h1 span { color: var(--clr-accent); }
+
+    .hero p {
+      margin-top: 1.25rem;
+      font-size: clamp(.95rem, 2vw, 1.15rem);
+      color: var(--clr-text-muted);
+      max-width: 560px;
+      animation: fadeDown .8s ease-out .3s both;
+    }
+
+    .hero__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      margin-top: 2rem;
+      padding: .85rem 2rem;
+      background: var(--clr-accent);
+      color: #000;
+      border: none;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: var(--transition);
+      animation: fadeDown .8s ease-out .45s both;
+      text-decoration: none;
+    }
+    .hero__cta:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--clr-accent-glow); }
+
+    .scroll-indicator {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 40px;
+      border: 2px solid var(--clr-text-muted);
+      border-radius: 12px;
+      animation: fadeDown .8s ease-out .6s both;
+    }
+    .scroll-indicator::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 8px;
+      background: var(--clr-accent);
+      border-radius: 2px;
+      animation: scrollBounce 1.8s ease-in-out infinite;
+    }
+
+    /* ---- SECTION SHARED ---- */
+    section { padding: 4rem 1.5rem; }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .section-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 4vw, 2.5rem);
+      font-weight: 700;
+    }
+    .section-header p {
+      color: var(--clr-text-muted);
+      margin-top: .5rem;
+      max-width: 540px;
+      margin-inline: auto;
+    }
+
+    /* ---- MAP SECTION ---- */
+    .map-section {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    #map {
+      width: 100%;
+      height: 520px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255,255,255,.06);
+      z-index: 1;
+    }
+
+    .map-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      justify-content: center;
+      margin-top: 1.25rem;
+    }
+
+    .map-btn {
+      padding: .6rem 1.4rem;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 999px;
+      background: var(--clr-surface);
+      color: var(--clr-text);
+      font-size: .85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .map-btn:hover, .map-btn.active {
+      border-color: var(--clr-accent);
+      background: var(--clr-accent);
+      color: #000;
+    }
+
+    .route-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      justify-content: center;
+      margin-top: 1rem;
+      font-size: .85rem;
+      color: var(--clr-text-muted);
+    }
+    .route-legend span {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .route-legend .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* ---- JOURNEY STATS ---- */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      max-width: 900px;
+      margin: 2.5rem auto 0;
+    }
+
+    .stat-card {
+      background: var(--clr-surface);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,.04);
+      transition: var(--transition);
+    }
+    .stat-card:hover { border-color: var(--clr-accent); transform: translateY(-3px); }
+    .stat-card .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--clr-accent);
+    }
+    .stat-card .stat-label {
+      font-size: .8rem;
+      color: var(--clr-text-muted);
+      margin-top: .25rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    /* ---- CITY CARDS ---- */
+    .cities-section {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .city-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .city-card {
+      background: var(--clr-surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.04);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    .city-card:hover { transform: translateY(-6px); border-color: rgba(255,255,255,.12); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+
+    .city-card__img {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+    }
+    .city-card__img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .6s ease;
+    }
+    .city-card:hover .city-card__img img { transform: scale(1.08); }
+
+    .city-card__badge {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      padding: .25rem .75rem;
+      border-radius: 999px;
+      font-size: .7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #fff;
+    }
+
+    .city-card__body { padding: 1.5rem; }
+    .city-card__body h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: .15rem;
+    }
+    .city-card__body .city-subtitle {
+      font-size: .8rem;
+      color: var(--clr-text-muted);
+      margin-bottom: .75rem;
+    }
+    .city-card__body p {
+      font-size: .9rem;
+      color: var(--clr-text-muted);
+      line-height: 1.65;
+    }
+
+    .city-highlights {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-top: 1rem;
+    }
+    .city-highlights .chip {
+      padding: .3rem .75rem;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 500;
+      border: 1px solid rgba(255,255,255,.1);
+      color: var(--clr-text-muted);
+      transition: var(--transition);
+    }
+    .city-card:hover .chip { border-color: var(--clr-accent); color: var(--clr-accent); }
+
+    /* ---- CITY DETAIL MODAL ---- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .modal {
+      background: var(--clr-surface);
+      border-radius: var(--radius);
+      max-width: 640px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      transform: translateY(30px) scale(.96);
+      transition: transform .35s ease;
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+    .modal__header {
+      position: relative;
+      height: 220px;
+      overflow: hidden;
+    }
+    .modal__header img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .modal__header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, var(--clr-surface) 0%, transparent 60%);
+    }
+    .modal__close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0,0,0,.5);
+      color: #fff;
+      font-size: 1.2rem;
+      cursor: pointer;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+    .modal__close:hover { background: var(--clr-accent); color: #000; }
+
+    .modal__body { padding: 1.5rem 2rem 2rem; }
+    .modal__body h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      margin-bottom: .25rem;
+    }
+    .modal__body .modal-subtitle {
+      color: var(--clr-text-muted);
+      font-size: .85rem;
+      margin-bottom: 1.25rem;
+    }
+    .modal__body p {
+      color: var(--clr-text-muted);
+      font-size: .92rem;
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+
+    .modal-facts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+      margin-top: 1rem;
+    }
+    .modal-fact {
+      background: rgba(255,255,255,.03);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .modal-fact .fact-label {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--clr-text-muted);
+    }
+    .modal-fact .fact-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-top: .15rem;
+    }
+
+    .modal-attractions {
+      margin-top: 1.5rem;
+    }
+    .modal-attractions h4 {
+      font-size: .85rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--clr-accent);
+      margin-bottom: .75rem;
+    }
+    .modal-attractions ul {
+      list-style: none;
+      display: grid;
+      gap: .5rem;
+    }
+    .modal-attractions li {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .88rem;
+      color: var(--clr-text-muted);
+    }
+    .modal-attractions li::before {
+      content: '✦';
+      color: var(--clr-accent);
+      font-size: .65rem;
+    }
+
+    /* ---- JOURNEY TIMELINE ---- */
+    .timeline-section {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 2.5rem;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--clr-delhi), var(--clr-udaipur), var(--clr-mumbai));
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: all .5s ease;
+    }
+    .timeline-item.visible { opacity: 1; transform: translateX(0); }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -2.5rem;
+      top: .35rem;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 3px solid var(--clr-accent);
+      background: var(--clr-bg);
+    }
+
+    .timeline-item h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      margin-bottom: .25rem;
+    }
+    .timeline-item .tl-meta {
+      font-size: .78rem;
+      color: var(--clr-accent);
+      font-weight: 500;
+      margin-bottom: .5rem;
+    }
+    .timeline-item p {
+      font-size: .88rem;
+      color: var(--clr-text-muted);
+      line-height: 1.65;
+    }
+
+    /* ---- FOOTER ---- */
+    .site-footer {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      border-top: 1px solid rgba(255,255,255,.04);
+      color: var(--clr-text-muted);
+      font-size: .8rem;
+    }
+    .site-footer a { color: var(--clr-accent); text-decoration: none; }
+
+    /* ---- ANIMATIONS ---- */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scrollBounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+      50%      { transform: translateX(-50%) translateY(10px); opacity: .3; }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--clr-accent-glow); }
+      50%      { transform: scale(1.05); box-shadow: 0 0 20px 4px var(--clr-accent-glow); }
+    }
+
+    /* Leaflet marker pulse */
+    .pulse-marker {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      position: relative;
+    }
+    .pulse-marker::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      animation: markerPulse 2s ease-out infinite;
+    }
+    @keyframes markerPulse {
+      0%   { transform: scale(.8); opacity: .9; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 768px) {
+      #map { height: 380px; }
+      .modal__header { height: 160px; }
+      .modal__body { padding: 1.25rem 1.5rem 1.5rem; }
+      .modal-facts { grid-template-columns: 1fr; }
+      .city-grid { grid-template-columns: 1fr; }
+      section { padding: 3rem 1rem; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .hero { min-height: 90vh; padding: 2rem 1rem; }
+      #map { height: 300px; border-radius: 12px; }
+      .stats-row { grid-template-columns: 1fr; }
+      .map-controls { gap: .5rem; }
+      .map-btn { font-size: .78rem; padding: .5rem 1rem; }
+    }
+
+    /* Animate-on-scroll utility */
+    .aos { opacity: 0; transform: translateY(24px); transition: all .6s ease; }
+    .aos.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero" id="top">
+  <span class="hero__tag">Interactive Travel Experience</span>
+  <h1>Journey Through <span>India's</span> Golden Triangle… and Beyond</h1>
+  <p>Explore the vibrant routes connecting Delhi, Udaipur, and Mumbai — three cities that tell the story of India's history, royalty, and modern ambition.</p>
+  <a href="#map-section" class="hero__cta">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+    Explore the Map
+  </a>
+  <div class="scroll-indicator"></div>
+</section>
+
+<!-- ==================== MAP ==================== -->
+<section class="map-section" id="map-section">
+  <div class="section-header aos">
+    <h2>The Travel Route</h2>
+    <p>An interactive map showing the routes between Delhi, Udaipur, and Mumbai. Click the buttons to animate travel between cities.</p>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="map-controls">
+    <button class="map-btn" data-route="all" onclick="showRoute('all')">Show All Routes</button>
+    <button class="map-btn" data-route="delhi-udaipur" onclick="showRoute('delhi-udaipur')">Delhi → Udaipur</button>
+    <button class="map-btn" data-route="udaipur-mumbai" onclick="showRoute('udaipur-mumbai')">Udaipur → Mumbai</button>
+    <button class="map-btn" data-route="delhi-mumbai" onclick="showRoute('delhi-mumbai')">Delhi → Mumbai</button>
+    <button class="map-btn" data-route="animate" onclick="animateJourney()">▶ Animate Full Journey</button>
+  </div>
+
+  <div class="route-legend">
+    <span><span class="dot" style="background:var(--clr-delhi)"></span> Delhi</span>
+    <span><span class="dot" style="background:var(--clr-udaipur)"></span> Udaipur</span>
+    <span><span class="dot" style="background:var(--clr-mumbai)"></span> Mumbai</span>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row aos">
+    <div class="stat-card">
+      <div class="stat-value">663 km</div>
+      <div class="stat-label">Delhi → Udaipur</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">660 km</div>
+      <div class="stat-label">Udaipur → Mumbai</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">1,400 km</div>
+      <div class="stat-label">Delhi → Mumbai</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">3 Cities</div>
+      <div class="stat-label">Across Western India</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== CITY CARDS ==================== -->
+<section class="cities-section" id="cities">
+  <div class="section-header aos">
+    <h2>Discover the Cities</h2>
+    <p>Tap on any city to explore its history, attractions, and what makes it unique.</p>
+  </div>
+
+  <div class="city-grid">
+    <!-- Delhi -->
+    <div class="city-card aos" onclick="openModal('delhi')">
+      <div class="city-card__img">
+        <img src="https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600&h=400&fit=crop" alt="Delhi — India Gate" loading="lazy">
+        <span class="city-card__badge" style="background:var(--clr-delhi)">Capital City</span>
+      </div>
+      <div class="city-card__body">
+        <h3>Delhi</h3>
+        <div class="city-subtitle">Heart of India · Population 32 M</div>
+        <p>A sprawling metropolis where ancient Mughal monuments stand alongside the corridors of modern power — Delhi is a living chronicle of empires.</p>
+        <div class="city-highlights">
+          <span class="chip">Red Fort</span>
+          <span class="chip">Qutub Minar</span>
+          <span class="chip">Street Food</span>
+          <span class="chip">Chandni Chowk</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Udaipur -->
+    <div class="city-card aos" onclick="openModal('udaipur')">
+      <div class="city-card__img">
+        <img src="https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&h=400&fit=crop" alt="Udaipur — City Palace" loading="lazy">
+        <span class="city-card__badge" style="background:var(--clr-udaipur)">City of Lakes</span>
+      </div>
+      <div class="city-card__body">
+        <h3>Udaipur</h3>
+        <div class="city-subtitle">Venice of the East · Rajasthan</div>
+        <p>Nestled among the Aravalli hills, Udaipur's shimmering lakes and ornate palaces earned it the title of the most romantic city in India.</p>
+        <div class="city-highlights">
+          <span class="chip">Lake Pichola</span>
+          <span class="chip">City Palace</span>
+          <span class="chip">Jag Mandir</span>
+          <span class="chip">Havelis</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mumbai -->
+    <div class="city-card aos" onclick="openModal('mumbai')">
+      <div class="city-card__img">
+        <img src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=600&h=400&fit=crop" alt="Mumbai — Gateway of India" loading="lazy">
+        <span class="city-card__badge" style="background:var(--clr-mumbai)">City of Dreams</span>
+      </div>
+      <div class="city-card__body">
+        <h3>Mumbai (Bombay)</h3>
+        <div class="city-subtitle">Financial Capital · Population 21 M</div>
+        <p>From the iconic Gateway of India to the bustling dabbawalas, Mumbai pulsates with an unmatched energy — India's city of dreams and ambition.</p>
+        <div class="city-highlights">
+          <span class="chip">Gateway of India</span>
+          <span class="chip">Marine Drive</span>
+          <span class="chip">Bollywood</span>
+          <span class="chip">Dabbawala</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== JOURNEY TIMELINE ==================== -->
+<section class="timeline-section" id="journey">
+  <div class="section-header aos">
+    <h2>A Suggested Journey</h2>
+    <p>Follow this recommended itinerary as you travel across western India.</p>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item" data-city="delhi">
+      <h3>Day 1-3 — Delhi</h3>
+      <div class="tl-meta">Start in the Capital</div>
+      <p>Arrive in Delhi and immerse yourself in the old city. Walk through the narrow lanes of Chandni Chowk, taste legendary parathas at Paranthe Wali Gali, visit the solemn beauty of Humayun's Tomb, and watch sunset from the ramparts of the Red Fort.</p>
+    </div>
+    <div class="timeline-item" data-city="delhi-udaipur">
+      <h3>Travel Day — Delhi to Udaipur</h3>
+      <div class="tl-meta">663 km · ~10 hrs by train / 1 hr flight</div>
+      <p>Board the Mewar Express or fly to Udaipur. The train journey passes through the arid beauty of Rajasthan, with glimpses of small desert towns and rolling sand dunes.</p>
+    </div>
+    <div class="timeline-item" data-city="udaipur">
+      <h3>Day 4-6 — Udaipur</h3>
+      <div class="tl-meta">The Lake City</div>
+      <p>Explore the grandeur of the City Palace complex, take a boat ride on Lake Pichola as the Taj Lake Palace floats like a mirage, and wander through the colorful markets. Don't miss a sunset from the Monsoon Palace perched high above the city.</p>
+    </div>
+    <div class="timeline-item" data-city="udaipur-mumbai">
+      <h3>Travel Day — Udaipur to Mumbai</h3>
+      <div class="tl-meta">660 km · ~12 hrs by train / 1.5 hr flight</div>
+      <p>Travel south through Gujarat into Maharashtra. The landscape transitions from dry Rajasthani terrain to the lush Western Ghats before descending to the Arabian Sea coast.</p>
+    </div>
+    <div class="timeline-item" data-city="mumbai">
+      <h3>Day 7-9 — Mumbai</h3>
+      <div class="tl-meta">City of Dreams</div>
+      <p>End your journey in India's maximum city. Stroll along Marine Drive at twilight, explore the colonial Gothic architecture of CST station, taste vada pav from street vendors, and take a ferry to the ancient Elephanta Caves carved into the island rock.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== MODAL ==================== -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal" onclick="event.stopPropagation()">
+    <div class="modal__header">
+      <img id="modalImg" src="" alt="">
+      <button class="modal__close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal__body">
+      <h2 id="modalTitle"></h2>
+      <div class="modal-subtitle" id="modalSubtitle"></div>
+      <p id="modalDesc"></p>
+      <div class="modal-facts" id="modalFacts"></div>
+      <div class="modal-attractions" id="modalAttractions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="site-footer">
+  <p>Crafted as an interactive travel visualization &middot; Data is approximate &middot; Built with <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a></p>
+</footer>
+
+<!-- ==================== SCRIPTS ==================== -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ---------- City Data ----------
+const cities = {
+  delhi: {
+    name: 'Delhi',
+    subtitle: 'Heart of India · National Capital Territory',
+    coords: [28.6139, 77.2090],
+    color: '#e74c3c',
+    img: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&h=500&fit=crop',
+    desc: 'Delhi, India\'s capital territory, is a massive metropolitan area in the country\'s north. In Old Delhi, a neighbourhood dating to the 1600s, stands the imposing Mughal-era Red Fort and the sprawling Jama Masjid mosque. Nearby is Chandni Chowk, a vibrant bazaar filled with food carts, sweets shops, and spice stalls. New Delhi, designed by the British in the early 20th century, is the seat of government, lined with grand boulevards and impressive institutions.',
+    facts: [
+      { label: 'Population', value: '32 million' },
+      { label: 'Founded', value: '~3000 BCE' },
+      { label: 'Language', value: 'Hindi, Urdu, English' },
+      { label: 'Best Season', value: 'Oct – Mar' },
+    ],
+    attractions: [
+      'Red Fort — UNESCO World Heritage Mughal fortress',
+      'Qutub Minar — 73m tower from the 12th century',
+      'Humayun\'s Tomb — Precursor to the Taj Mahal',
+      'India Gate — War memorial on Rajpath',
+      'Chandni Chowk — Legendary street-food paradise',
+      'Lotus Temple — Bahá\'í House of Worship',
+    ],
+  },
+  udaipur: {
+    name: 'Udaipur',
+    subtitle: 'Venice of the East · Rajasthan',
+    coords: [24.5854, 73.7125],
+    color: '#3498db',
+    img: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&h=500&fit=crop',
+    desc: 'Udaipur, formerly the capital of the Mewar Kingdom, is a city in the western Indian state of Rajasthan. Founded in 1559 by Maharana Udai Singh II, it\'s set around a series of artificial lakes and is known for its lavish royal residences. City Palace, overlooking Lake Pichola, is a monumental complex of 11 palaces, courtyards, and gardens, famed for its intricate peacock mosaics.',
+    facts: [
+      { label: 'Population', value: '0.6 million' },
+      { label: 'Founded', value: '1559 CE' },
+      { label: 'Language', value: 'Hindi, Mewari' },
+      { label: 'Best Season', value: 'Sep – Mar' },
+    ],
+    attractions: [
+      'City Palace — Largest palace complex in Rajasthan',
+      'Lake Pichola — Serene lake with island palaces',
+      'Jag Mandir — Island palace with marble elephants',
+      'Monsoon Palace — Hilltop palace with panoramic views',
+      'Saheliyon Ki Bari — Garden of the Maidens',
+      'Bagore Ki Haveli — 18th-century haveli with folk dance shows',
+    ],
+  },
+  mumbai: {
+    name: 'Mumbai (Bombay)',
+    subtitle: 'Financial Capital · Maharashtra',
+    coords: [19.0760, 72.8777],
+    color: '#2ecc71',
+    img: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=800&h=500&fit=crop',
+    desc: 'Mumbai (formerly Bombay) is a densely populated city on India\'s west coast. It\'s the financial center of India and the home of Bollywood. The city\'s identity is tied to the sea — from the iconic Gateway of India arch to the sweeping curve of Marine Drive, locally called the Queen\'s Necklace for its string of street lights at night. The city\'s legendary dabbawala lunch-delivery network is a marvel of logistics studied at Harvard Business School.',
+    facts: [
+      { label: 'Population', value: '21 million' },
+      { label: 'Founded', value: '1507 CE' },
+      { label: 'Language', value: 'Marathi, Hindi, English' },
+      { label: 'Best Season', value: 'Nov – Feb' },
+    ],
+    attractions: [
+      'Gateway of India — Iconic waterfront arch built in 1924',
+      'Marine Drive — 3.6 km promenade along the Arabian Sea',
+      'Elephanta Caves — Ancient rock-cut cave temples',
+      'Chhatrapati Shivaji Terminus — Victorian Gothic railway station',
+      'Dhobi Ghat — World\'s largest open-air laundry',
+      'Colaba Causeway — Bustling street market and café district',
+    ],
+  },
+};
+
+// Route waypoints (approximate road paths)
+const routes = {
+  'delhi-udaipur': [
+    [28.6139, 77.2090],
+    [28.4595, 77.0266],
+    [27.9006, 76.6166],
+    [27.5530, 76.6346],
+    [27.2046, 76.3508],
+    [26.9124, 75.7873],
+    [26.4499, 74.6399],
+    [25.7780, 74.2179],
+    [25.3176, 74.0296],
+    [24.8797, 73.8760],
+    [24.5854, 73.7125],
+  ],
+  'udaipur-mumbai': [
+    [24.5854, 73.7125],
+    [24.1949, 73.6840],
+    [23.7337, 73.6150],
+    [23.2599, 72.6366],
+    [22.7196, 72.3512],
+    [22.3072, 73.1812],
+    [21.7051, 73.0039],
+    [21.1702, 72.8311],
+    [20.5937, 72.9673],
+    [19.9975, 73.2070],
+    [19.4559, 72.9432],
+    [19.0760, 72.8777],
+  ],
+  'delhi-mumbai': [
+    [28.6139, 77.2090],
+    [28.1830, 76.8687],
+    [27.1767, 76.7885],
+    [26.9124, 75.7873],
+    [25.4358, 74.6294],
+    [24.5854, 74.0000],
+    [23.2599, 72.6366],
+    [22.3072, 73.1812],
+    [21.1702, 72.8311],
+    [20.0059, 73.2070],
+    [19.0760, 72.8777],
+  ],
+};
+
+// ---------- Map Initialisation ----------
+const map = L.map('map', {
+  zoomControl: false,
+  scrollWheelZoom: true,
+  attributionControl: true,
+}).setView([24.0, 75.0], 6);
+
+L.control.zoom({ position: 'topright' }).addTo(map);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org">OSM</a>',
+  maxZoom: 18,
+}).addTo(map);
+
+// Custom marker icon helper
+function cityIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div class="pulse-marker" style="background:${color};color:${color};"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+}
+
+// Place city markers
+Object.entries(cities).forEach(([key, city]) => {
+  const marker = L.marker(city.coords, { icon: cityIcon(city.color) }).addTo(map);
+  marker.bindPopup(
+    `<div style="text-align:center;font-family:Inter,sans-serif;">
+      <strong style="font-size:1rem;">${city.name}</strong><br>
+      <span style="font-size:.78rem;color:#888;">${city.subtitle}</span><br>
+      <button onclick="openModal('${key}')"
+        style="margin-top:6px;padding:4px 14px;border:none;border-radius:99px;background:#f0a500;color:#000;font-weight:600;font-size:.78rem;cursor:pointer;">
+        Explore
+      </button>
+    </div>`,
+    { className: 'custom-popup' }
+  );
+});
+
+// ---------- Route Drawing ----------
+let drawnRoutes = [];
+let animationFrameId = null;
+
+function clearRoutes() {
+  drawnRoutes.forEach(r => map.removeLayer(r));
+  drawnRoutes = [];
+  if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+  document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
+}
+
+function drawRoute(key, color, animate) {
+  const coords = routes[key];
+  if (!coords) return;
+  if (animate) {
+    animateRoute(coords, color);
+  } else {
+    const line = L.polyline(coords, { color, weight: 3, opacity: .85, dashArray: '8 6' }).addTo(map);
+    drawnRoutes.push(line);
+  }
+}
+
+function animateRoute(coords, color) {
+  return new Promise(resolve => {
+    let idx = 1;
+    const line = L.polyline([coords[0]], { color, weight: 3.5, opacity: .9 }).addTo(map);
+    drawnRoutes.push(line);
+
+    function step() {
+      if (idx < coords.length) {
+        line.addLatLng(coords[idx]);
+        idx++;
+        animationFrameId = requestAnimationFrame(() => setTimeout(step, 120));
+      } else {
+        resolve();
+      }
+    }
+    step();
+  });
+}
+
+function showRoute(routeKey) {
+  clearRoutes();
+  if (routeKey === 'all') {
+    drawRoute('delhi-udaipur', '#e74c3c', false);
+    drawRoute('udaipur-mumbai', '#3498db', false);
+    drawRoute('delhi-mumbai', '#2ecc71', false);
+    map.fitBounds([[28.8, 72.5], [18.8, 77.5]], { padding: [30, 30] });
+  } else {
+    const colors = { 'delhi-udaipur': '#e74c3c', 'udaipur-mumbai': '#3498db', 'delhi-mumbai': '#2ecc71' };
+    drawRoute(routeKey, colors[routeKey] || '#f0a500', false);
+    map.fitBounds(routes[routeKey].map(c => [c[0], c[1]]), { padding: [40, 40] });
+  }
+  document.querySelector(`.map-btn[data-route="${routeKey}"]`)?.classList.add('active');
+}
+
+async function animateJourney() {
+  clearRoutes();
+  document.querySelector('.map-btn[data-route="animate"]').classList.add('active');
+  map.fitBounds([[28.8, 72.5], [18.8, 77.5]], { padding: [30, 30] });
+
+  await animateRoute(routes['delhi-udaipur'], '#e74c3c');
+  await new Promise(r => setTimeout(r, 400));
+  await animateRoute(routes['udaipur-mumbai'], '#3498db');
+  await new Promise(r => setTimeout(r, 400));
+  await animateRoute(routes['delhi-mumbai'], '#2ecc71');
+}
+
+// Show all routes initially
+showRoute('all');
+
+// ---------- Modal ----------
+function openModal(key) {
+  const city = cities[key];
+  if (!city) return;
+  document.getElementById('modalImg').src = city.img;
+  document.getElementById('modalTitle').textContent = city.name;
+  document.getElementById('modalSubtitle').textContent = city.subtitle;
+  document.getElementById('modalDesc').textContent = city.desc;
+
+  const factsHTML = city.facts.map(f =>
+    `<div class="modal-fact"><div class="fact-label">${f.label}</div><div class="fact-value">${f.value}</div></div>`
+  ).join('');
+  document.getElementById('modalFacts').innerHTML = factsHTML;
+
+  const attHTML = `<h4>Top Attractions</h4><ul>${city.attractions.map(a => `<li>${a}</li>`).join('')}</ul>`;
+  document.getElementById('modalAttractions').innerHTML = attHTML;
+
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  map.flyTo(city.coords, 10, { duration: 1.2 });
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modalOverlay') && e.type === 'click') return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ---------- Scroll Animations ----------
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.aos, .timeline-item').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

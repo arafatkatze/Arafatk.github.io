@@ -27,7 +27,7 @@ bento_tiles:
   - title: Travel
     label: Explore · Globe
     link: /travel/
-    image: https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/1200px-The_Earth_seen_from_Apollo_17.jpg
+    image: /assets/img/earth-from-space.jpg
     type: image
 
   - title: Skiing

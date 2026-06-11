@@ -127,6 +127,217 @@
   }
 }
 
+.pixel-btn-primary {
+  opacity: 1;
+  border-color: var(--global-theme-color);
+  color: var(--global-theme-color);
+  font-weight: 600;
+
+  &:hover {
+    background: var(--global-theme-color);
+    color: var(--global-bg-color);
+  }
+}
+
+// --- Submit modal ---
+
+.pixel-submit-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1001;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+
+  &.open {
+    display: flex;
+    animation: pixel-modal-fade 0.2s ease;
+  }
+}
+
+@keyframes pixel-modal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pixel-submit-content {
+  position: relative;
+  background: var(--global-bg-color);
+  border: 1px solid var(--global-divider-color);
+  border-radius: 14px;
+  padding: 28px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.4),
+    0 0 80px rgba(111, 237, 214, 0.06);
+  animation: pixel-modal-pop 0.25s ease;
+}
+
+@keyframes pixel-modal-pop {
+  from {
+    transform: translateY(14px) scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.pixel-submit-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--global-text-color);
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 4px;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.pixel-submit-title {
+  font-family: monospace;
+  font-size: 1.15rem;
+  margin: 0 0 0.5rem;
+  color: var(--global-text-color);
+}
+
+.pixel-submit-subtitle {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  opacity: 0.7;
+  margin-bottom: 1.1rem;
+}
+
+.pixel-submit-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.1rem;
+
+  img {
+    width: 100%;
+    max-width: 240px;
+    border-radius: 8px;
+    border: 1px solid var(--global-divider-color);
+    background: #1a1a2e;
+    image-rendering: pixelated;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  }
+}
+
+.pixel-submit-caption {
+  font-family: monospace;
+  font-size: 0.75rem;
+  opacity: 0.55;
+}
+
+.pixel-submit-textarea {
+  width: 100%;
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--global-divider-color);
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--global-text-color);
+  resize: vertical;
+  min-height: 70px;
+  transition: border-color 0.2s ease;
+
+  html[data-theme="dark"] & {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--global-theme-color);
+  }
+
+  &.input-error {
+    border-color: #e84855;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &::placeholder {
+    opacity: 0.5;
+  }
+}
+
+.pixel-submit-error {
+  display: block;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #e84855;
+  margin-top: 0.45rem;
+}
+
+.pixel-submit-btn {
+  display: block;
+  width: 100%;
+  margin-top: 0.9rem;
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--global-theme-color);
+  background: var(--global-theme-color);
+  color: var(--global-bg-color);
+  cursor: pointer;
+  transition:
+    opacity 0.2s ease,
+    transform 0.15s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 0.88;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.pixel-submit-success {
+  text-align: center;
+  padding: 12px 0 4px;
+
+  .pixel-submit-success-icon {
+    font-size: 2.2rem;
+    color: var(--global-theme-color);
+    margin-bottom: 0.8rem;
+    animation: pixel-float 3s ease-in-out infinite alternate;
+  }
+
+  .pixel-btn {
+    margin-top: 0.6rem;
+  }
+}
+
 .pixel-particle {
   position: absolute;
   border-radius: 2px;

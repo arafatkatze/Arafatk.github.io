@@ -284,13 +284,12 @@ document.addEventListener("DOMContentLoaded", function () {
     canvas.dispatchEvent(new MouseEvent("mouseup"));
   });
 
-  downloadBtn.addEventListener("click", function () {
+  function renderBoardImage(cellPx) {
     var exportCanvas = document.createElement("canvas");
-    var exportSize = GRID_SIZE * 16;
+    var exportSize = GRID_SIZE * cellPx;
     exportCanvas.width = exportSize;
     exportCanvas.height = exportSize;
     var exportCtx = exportCanvas.getContext("2d");
-    var exportCell = exportSize / GRID_SIZE;
 
     exportCtx.fillStyle = "#1a1a2e";
     exportCtx.fillRect(0, 0, exportSize, exportSize);
@@ -299,20 +298,129 @@ document.addEventListener("DOMContentLoaded", function () {
       for (var x = 0; x < GRID_SIZE; x++) {
         if (grid[y][x]) {
           exportCtx.fillStyle = grid[y][x];
-          exportCtx.fillRect(
-            x * exportCell,
-            y * exportCell,
-            exportCell,
-            exportCell
-          );
+          exportCtx.fillRect(x * cellPx, y * cellPx, cellPx, cellPx);
         }
       }
     }
 
+    return exportCanvas;
+  }
+
+  downloadBtn.addEventListener("click", function () {
     var link = document.createElement("a");
     link.download = "pixel-board.png";
-    link.href = exportCanvas.toDataURL("image/png");
+    link.href = renderBoardImage(16).toDataURL("image/png");
     link.click();
+  });
+
+  // --- Submit board as image (anonymous, via Formspree) ---
+  var SUBMIT_URL = "https://formspree.io/f/mqeenowa";
+  var submitBtn = document.getElementById("submit-board");
+  var submitModal = document.getElementById("pixel-submit-modal");
+  var submitCloseBtn = document.getElementById("pixel-submit-close");
+  var submitDoneBtn = document.getElementById("pixel-submit-done");
+  var submitFormState = document.getElementById("pixel-submit-form-state");
+  var submitSuccessState = document.getElementById("pixel-submit-success-state");
+  var submitForm = document.getElementById("pixel-submit-form");
+  var submitMessage = document.getElementById("pixel-submit-message");
+  var submitSendBtn = document.getElementById("pixel-submit-btn");
+  var submitError = document.getElementById("pixel-submit-error");
+  var previewImg = document.getElementById("pixel-submit-preview-img");
+  var previewCaption = document.getElementById("pixel-submit-caption");
+
+  function openSubmitModal() {
+    previewImg.src = renderBoardImage(16).toDataURL("image/png");
+    previewCaption.textContent =
+      pixelCount + (pixelCount === 1 ? " pixel" : " pixels");
+
+    var isEmpty = pixelCount === 0;
+    submitSendBtn.disabled = isEmpty;
+    submitMessage.disabled = isEmpty;
+    if (isEmpty) {
+      submitError.textContent =
+        "your board is empty — place a few pixels first";
+      submitError.style.display = "block";
+    } else {
+      submitError.style.display = "none";
+    }
+
+    submitFormState.style.display = "block";
+    submitSuccessState.style.display = "none";
+    submitMessage.classList.remove("input-error");
+    submitModal.classList.add("open");
+    document.body.style.overflow = "hidden";
+    if (!isEmpty) {
+      submitMessage.focus();
+    }
+  }
+
+  function closeSubmitModal() {
+    submitModal.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  submitBtn.addEventListener("click", openSubmitModal);
+  submitCloseBtn.addEventListener("click", closeSubmitModal);
+  submitDoneBtn.addEventListener("click", closeSubmitModal);
+  submitModal.addEventListener("click", function (e) {
+    if (e.target === submitModal) {
+      closeSubmitModal();
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && submitModal.classList.contains("open")) {
+      closeSubmitModal();
+    }
+  });
+
+  submitMessage.addEventListener("input", function () {
+    submitError.style.display = "none";
+    submitMessage.classList.remove("input-error");
+  });
+
+  submitForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    var message = submitMessage.value.trim();
+    if (!message) {
+      submitError.textContent = "a message is required — say anything!";
+      submitError.style.display = "block";
+      submitMessage.classList.add("input-error");
+      submitMessage.focus();
+      return;
+    }
+
+    submitError.style.display = "none";
+    submitSendBtn.disabled = true;
+    submitSendBtn.textContent = "sending...";
+
+    var formData = new FormData();
+    formData.append("_subject", "New Pixelboard submission");
+    formData.append("message", message);
+    formData.append("pixelsPlaced", pixelCount + " pixels");
+    formData.append("boardImage", renderBoardImage(8).toDataURL("image/png"));
+
+    fetch(SUBMIT_URL, {
+      method: "POST",
+      body: formData,
+      headers: { Accept: "application/json" },
+    })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error("submit failed");
+        }
+        submitFormState.style.display = "none";
+        submitSuccessState.style.display = "block";
+        submitForm.reset();
+      })
+      .catch(function () {
+        submitError.textContent = "something went wrong — please try again";
+        submitError.style.display = "block";
+      })
+      .finally(function () {
+        submitSendBtn.disabled = false;
+        submitSendBtn.textContent = "send it";
+      });
   });
 
   function createParticles() {
